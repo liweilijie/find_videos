@@ -1,2 +1,2 @@
 -- Add down migration script here
-drop table events;
+drop table if exists events;

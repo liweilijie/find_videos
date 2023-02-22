@@ -1,29 +1,27 @@
 use chrono::Utc;
 use crate::util::uuid_v4;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, sqlx::FromRow)]
 pub struct File {
     pub id: String,
-    pub disk_name: String,
+    pub full_path: String,
     pub file_name: String,
-    pub dir: bool,
     pub hostname: String,
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 impl File {
    pub fn new(
-       disk_name: String,
+       full_path: String,
        file_name: String,
-       dir: bool,
        hostname: Option<String>,
    ) -> Self {
        let hostname = hostname.unwrap_or_else(|| format!("{}:{}", whoami::hostname(), whoami::username()));
        Self {
            id: uuid_v4(),
-           disk_name,
+           full_path,
            file_name,
-           dir,
            timestamp: Utc::now(),
            hostname
        }

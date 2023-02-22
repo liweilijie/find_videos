@@ -8,4 +8,4 @@ create table if not exists events (
 );
 
 -- Ensure there is only ever one of each event type per file item
-create unique index file_event_idx ON events(event_type, file_id);
+create unique index if not exists file_event_idx ON events(event_type, file_id);

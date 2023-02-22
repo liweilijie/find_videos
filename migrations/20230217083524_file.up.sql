@@ -1,13 +1,11 @@
 -- Add up migration script here
-create table if not exists files (
+create table if not exists file (
    id text primary key,
-   disk_name text not null,
+   full_path text not null,
    file_name text not null,
-   dir BOOLEAN NOT NULL DEFAULT 0,
    hostname text not null,
    timestamp integer not null,
-
-   unique(disk_name, file_name, dir)
+   unique(full_path)
 );
 
-create index if not exists idx_files_file_name on files(file_name);
+create index if not exists idx_file_file_name on file(file_name);

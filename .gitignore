@@ -39,4 +39,4 @@ target/
 
 # ctags
 **/*.vi
-*.sqlite
+*.sqlite*
