@@ -4,6 +4,7 @@ create table if not exists file (
    full_path text not null,
    file_name text not null,
    hostname text not null,
+   dir boolean not null default 0,
    timestamp integer not null,
 
    unique(full_path)

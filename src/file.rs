@@ -8,11 +8,12 @@ pub struct File {
     pub full_path: String,
     pub file_name: String,
     pub hostname: String,
+    pub dir: bool,
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 impl File {
-    pub fn new(full_path: String, file_name: String, hostname: Option<String>) -> Self {
+    pub fn new(full_path: String, file_name: String, dir: bool, hostname: Option<String>) -> Self {
         let hostname =
             hostname.unwrap_or_else(|| format!("{}:{}", whoami::hostname(), whoami::username()));
         Self {
@@ -21,6 +22,7 @@ impl File {
             file_name,
             timestamp: Utc::now(),
             hostname,
+            dir,
         }
     }
 }
