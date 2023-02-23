@@ -38,3 +38,26 @@ sqlx migrate add events -r
 #[allow(dead_code)]
 pub fn new_delete(full_path: &str) -> Event {}
 ```
+
+利用 `async channel` 来 实现效率提升。
+```rust
+use tokio::sync::mpsc;
+
+#[tokio::main]
+async fn main() {
+    let (tx, mut rx) = mpsc::channel(32);
+    let tx2 = tx.clone();
+
+    tokio::spawn(async move {
+        tx.send("sending from first handle").await;
+    });
+
+    tokio::spawn(async move {
+        tx2.send("sending from second handle").await;
+    });
+
+    while let Some(message) = rx.recv().await {
+        println!("GOT = {}", message);
+    }
+}
+```

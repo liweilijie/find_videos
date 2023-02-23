@@ -104,7 +104,7 @@ impl Sqlite {
 #[async_trait]
 impl Database for Sqlite {
     async fn save(&mut self, f: &File) -> Result<()> {
-        debug!("saving file to sqlite");
+        // debug!("saving file to sqlite");
         let event = Event::new_create(f);
 
         let mut tx = self.pool.begin().await?;

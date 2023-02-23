@@ -1,9 +1,9 @@
 use crate::database::Sqlite;
+use crate::find::FindCommand;
+use crate::scan::ScanCommand;
 use crate::settings::Settings;
 use clap::{Parser, Subcommand};
 use eyre::{Result, WrapErr};
-use crate::find::FindCommand;
-use crate::scan::ScanCommand;
 
 /// scan or find anything.
 #[derive(Parser, Debug)]
@@ -28,18 +28,12 @@ pub enum Commands {
 
 impl Commands {
     pub async fn run(self) -> Result<()> {
-
         let settings = Settings::new().wrap_err("could not load settings.")?;
         let mut db = Sqlite::new(&settings.db_path).await?;
 
         match self {
-            Self::Scan(scan) => {
-                scan.run(&mut db).await
-            }
-            Self::Find(find) => {
-                find.run(&mut db, &settings).await
-            }
+            Self::Scan(scan) => scan.run(&mut db).await,
+            Self::Find(find) => find.run(&mut db, &settings).await,
         }
     }
 }
-
