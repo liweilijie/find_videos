@@ -5,6 +5,7 @@ create table if not exists file (
    file_name text not null,
    hostname text not null,
    timestamp integer not null,
+
    unique(full_path)
 );
 

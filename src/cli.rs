@@ -1,4 +1,9 @@
+use crate::database::Sqlite;
+use crate::settings::Settings;
 use clap::{Parser, Subcommand};
+use eyre::{Result, WrapErr};
+use crate::find::FindCommand;
+use crate::scan::ScanCommand;
 
 /// scan or find anything.
 #[derive(Parser, Debug)]
@@ -10,9 +15,31 @@ pub struct Args {
 }
 
 #[derive(Debug, Subcommand)]
+#[command(infer_subcommands = true)]
 pub enum Commands {
     /// delete sample file
-    Scan { name: Option<String> },
+    // Scan { name: Option<String> },
+    #[command(flatten)]
+    Scan(ScanCommand),
     /// trim name
-    Find { name: String },
+    #[command(flatten)]
+    Find(FindCommand),
 }
+
+impl Commands {
+    pub async fn run(self) -> Result<()> {
+
+        let settings = Settings::new().wrap_err("could not load settings.")?;
+        let mut db = Sqlite::new(&settings.db_path).await?;
+
+        match self {
+            Self::Scan(scan) => {
+                scan.run(&mut db).await
+            }
+            Self::Find(find) => {
+                find.run(&mut db, &settings).await
+            }
+        }
+    }
+}
+

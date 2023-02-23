@@ -15,4 +15,26 @@
 cargo install sqlx-cli
 # 生成init 目录 r: revers
 sqlx migrate add init -r
+
+sqlx migrate run --database-url="sqlite://sofaraway.sqlite"
+sqlx migrate revert --database-url="sqlite://sofaraway.sqlite"
+
+# 增加一个新的 sql migrations 文件一定要用这个命令，要不然就会报下面这个错。
+sqlx migrate add events -r
+```
+
+
+`error: while executing migrations: error returned from database: (code: 1555) UNIQUE constraint failed: _sqlx_migrations.version`
+
+这个报错不知道如何修复。 最后找到原因了一定要用 `sqlx migrate add events -r` 来新增加，这样时间就不会重复。
+
+## sqlite3 相关
+
+ 创建一个空数据库： `sqlite3 sofaraway.sqlite "VACUUM;"`
+ 
+## rust
+
+```rust
+#[allow(dead_code)]
+pub fn new_delete(full_path: &str) -> Event {}
 ```

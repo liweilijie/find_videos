@@ -1,6 +1,7 @@
 use crate::event::{Event, EventType};
 use crate::file::File;
 use async_trait::async_trait;
+use chrono::{TimeZone, Utc};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePool, SqlitePoolOptions, SqliteRow},
     Result, Row,
@@ -8,14 +9,7 @@ use sqlx::{
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
-use chrono::{TimeZone, Utc};
 use tracing::debug;
-
-pub struct Context {
-    disk_name: String,
-    file_name: String,
-    dir: bool,
-}
 
 #[async_trait]
 pub trait Database: Send + Sync {
@@ -68,13 +62,12 @@ impl Sqlite {
             EventType::Delete => "delete",
         };
 
-        sqlx::query("insert or ignore into events(id, timestamp, hostname, event_type, file_id, file_name) values(?1, ?2, ?3, ?4, ?5)")
+        sqlx::query("insert or ignore into events(id, timestamp, hostname, event_type, full_path) values(?1, ?2, ?3, ?4, ?5)")
             .bind(e.id.as_str())
             .bind(e.timestamp.timestamp_nanos())
             .bind(e.hostname.as_str())
             .bind(event_type)
-            .bind(e.file_id.as_str())
-            .bind(e.file_name.as_str())
+            .bind(e.full_path.as_str())
             .execute(tx)
             .await?;
 
@@ -83,13 +76,14 @@ impl Sqlite {
 
     async fn save_raw(tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>, f: &File) -> Result<()> {
         sqlx::query(
-            "insert or ignore into file(id, timestamp, full_path, file_name, hostname)\
+            "insert or ignore into file(id, timestamp, full_path, file_name, hostname)
                  values(?1, ?2, ?3, ?4, ?5)",
         )
         .bind(f.id.as_str())
         .bind(f.timestamp.timestamp_nanos())
         .bind(f.full_path.as_str())
         .bind(f.file_name.as_str())
+        .bind(f.hostname.as_str())
         .execute(tx)
         .await?;
 
@@ -180,16 +174,24 @@ impl Database for Sqlite {
 
 #[cfg(test)]
 mod test {
-    use crate::util::uuid_v4;
     use super::*;
+    use crate::log::log_init;
+    use crate::util::uuid_v4;
 
     async fn db_save(db: &mut impl Database, f: &File) -> Result<()> {
         db.save(f).await
     }
 
+    async fn db_query_file(db: &impl Database, query: &str) -> Result<()> {
+        let results = db.query_file(query).await.unwrap();
+        debug!("results:{:#?}", results);
+        Ok(())
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn test_db() {
-       let mut db = Sqlite::new("./sofaraway.sqlite").await.unwrap();
+        log_init();
+        let mut db = Sqlite::new("./sofaraway.sqlite").await.unwrap();
         let f = File {
             id: uuid_v4(),
             timestamp: Utc::now(),
@@ -198,6 +200,18 @@ mod test {
             file_name: "find_videos".to_string(),
         };
 
+        let f2 = File {
+            id: uuid_v4(),
+            timestamp: Utc::now(),
+            hostname: "liweideMacBook-Pro.local".to_string(),
+            full_path: "/Users/liwei/coding/rust/go语言基础".to_string(),
+            file_name: "go语言基础".to_string(),
+        };
+
         db_save(&mut db, &f).await.unwrap();
+        db_save(&mut db, &f2).await.unwrap();
+
+        let query = format!("select * from file where file_name like '%go%';");
+        db_query_file(&db, &query).await.unwrap();
     }
 }

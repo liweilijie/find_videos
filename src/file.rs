@@ -1,5 +1,5 @@
-use chrono::Utc;
 use crate::util::uuid_v4;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, sqlx::FromRow)]
@@ -12,18 +12,15 @@ pub struct File {
 }
 
 impl File {
-   pub fn new(
-       full_path: String,
-       file_name: String,
-       hostname: Option<String>,
-   ) -> Self {
-       let hostname = hostname.unwrap_or_else(|| format!("{}:{}", whoami::hostname(), whoami::username()));
-       Self {
-           id: uuid_v4(),
-           full_path,
-           file_name,
-           timestamp: Utc::now(),
-           hostname
-       }
-   }
+    pub fn new(full_path: String, file_name: String, hostname: Option<String>) -> Self {
+        let hostname =
+            hostname.unwrap_or_else(|| format!("{}:{}", whoami::hostname(), whoami::username()));
+        Self {
+            id: uuid_v4(),
+            full_path,
+            file_name,
+            timestamp: Utc::now(),
+            hostname,
+        }
+    }
 }

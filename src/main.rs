@@ -1,13 +1,16 @@
-mod log;
 mod cli;
 mod database;
-mod file;
-mod util;
 mod event;
+mod file;
+mod log;
+mod settings;
+mod util;
+mod find;
+mod scan;
 
-use anyhow::Result;
-use tracing::info;
 use clap::Parser;
+use eyre::Result;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,5 +20,5 @@ async fn main() -> Result<()> {
 
     info!("start find videos and args:{:?}.", args);
 
-    Ok(())
+    args.command.run().await
 }
