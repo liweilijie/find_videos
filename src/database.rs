@@ -76,13 +76,14 @@ impl Sqlite {
 
     async fn save_raw(tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>, f: &File) -> Result<()> {
         sqlx::query(
-            "insert or ignore into file(id, timestamp, full_path, file_name, hostname)
-                 values(?1, ?2, ?3, ?4, ?5)",
+            "insert or ignore into file(id, timestamp, full_path, file_name, dir, hostname)
+                 values(?1, ?2, ?3, ?4, ?5, ?6)",
         )
         .bind(f.id.as_str())
         .bind(f.timestamp.timestamp_nanos())
         .bind(f.full_path.as_str())
         .bind(f.file_name.as_str())
+        .bind(f.dir)
         .bind(f.hostname.as_str())
         .execute(tx)
         .await?;
@@ -96,6 +97,7 @@ impl Sqlite {
             timestamp: Utc.timestamp_nanos(row.get("timestamp")),
             full_path: row.get("full_path"),
             file_name: row.get("file_name"),
+            dir: row.get("dir"),
             hostname: row.get("hostname"),
         }
     }
@@ -198,6 +200,7 @@ mod test {
             hostname: "liweideMacBook-Pro.local".to_string(),
             full_path: "/Users/liwei/coding/rust/tools/find_videos".to_string(),
             file_name: "find_videos".to_string(),
+            dir: true,
         };
 
         let f2 = File {
@@ -206,6 +209,7 @@ mod test {
             hostname: "liweideMacBook-Pro.local".to_string(),
             full_path: "/Users/liwei/coding/rust/go语言基础".to_string(),
             file_name: "go语言基础".to_string(),
+            dir: false,
         };
 
         db_save(&mut db, &f).await.unwrap();

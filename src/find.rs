@@ -11,6 +11,8 @@ pub enum FindCommand {
         name: String,
         #[arg(long, short = 'p')]
         show_path: bool,
+        #[arg(long, short = 'd')]
+        only_show_dir: bool,
     },
     Count,
 }
@@ -18,8 +20,16 @@ pub enum FindCommand {
 impl FindCommand {
     pub async fn run(self, db: &mut impl Database, settings: &Settings) -> Result<()> {
         match self {
-            Self::Find { name, show_path } => {
-                let query = format!("select * from file where file_name like '%{name}%';");
+            Self::Find {
+                name,
+                show_path,
+                only_show_dir,
+            } => {
+                let query = if only_show_dir {
+                    format!("select * from file where file_name like '%{name}%' and dir = 1;")
+                } else {
+                    format!("select * from file where file_name like '%{name}%';")
+                };
                 info!("query:{query}");
                 let files = db.query_file(&query).await?;
                 for f in &files {

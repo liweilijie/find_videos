@@ -55,15 +55,13 @@ impl ScanCommand {
                                 let f = File::new(
                                     entry.path().display().to_string(),
                                     entry.file_name().to_string_lossy().to_string(),
+                                    entry.path().is_dir(),
                                     None,
                                 );
 
-                                match tx.send(f).await {
-                                    Ok(_) => {}
-                                    Err(e) => {
-                                        error!("send channel error:{}", e);
-                                    }
-                                };
+                                if let Err(e) = tx.send(f).await {
+                                    error!("send channel error:{}", e);
+                                }
 
                                 // db.save(&f).await?;
                                 total_files1.fetch_add(1, Ordering::Relaxed);
