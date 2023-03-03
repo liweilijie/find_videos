@@ -3,14 +3,15 @@ use crate::file::File;
 use async_walkdir::{DirEntry, WalkDir};
 use clap::Subcommand;
 use eyre::Result;
+use futures::{stream, StreamExt};
 use std::io::ErrorKind;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use time::Instant;
-use tokio_stream::StreamExt;
 use tracing::{debug, error};
 
 const CHANNEL_BUFFER_SIZE: usize = 10000;
+const MAX_CONCURRENT_JUMPERS: usize = 20000;
 const DEFAULT_VOLUMES_PATH: &str = "/Volumes";
 const EXCLUDE_MAC_VOLUMES_PATH: &str = "/Volumes/Macintosh";
 
@@ -26,6 +27,7 @@ impl ScanCommand {
     pub async fn run(self, db: &mut impl Database) -> Result<()> {
         let start = Instant::now();
         let total_files = Arc::new(AtomicU64::new(0));
+        let db = Arc::new(db);
 
         match self {
             Self::Scan { name } => {
@@ -84,10 +86,22 @@ impl ScanCommand {
                     }
                 });
 
-                while let Some(f) = rx.recv().await {
-                    debug!("got file:{}", f.file_name);
-                    db.save(&f).await?;
-                }
+                // while let Some(f) = rx.recv().await {
+                //     debug!("got file:{}", f.file_name);
+                //     db.save(&f).await?;
+                // }
+
+                // 并发处理
+                let input_rx_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+                input_rx_stream
+                    .for_each_concurrent(10000, |ff| {
+                        let db = db.clone();
+                        async move {
+                            debug!("got file:{}", ff.file_name);
+                            db.save(&ff).await;
+                        }
+                    })
+                    .await;
 
                 debug!(
                     "scan total:{}, elapsed:{}",
